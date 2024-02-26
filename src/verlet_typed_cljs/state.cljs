@@ -2,8 +2,8 @@
   (:require [reagent.core :as r]))
 
 (defonce settings
-  {:num-particles 500,
-   :radius 5,
+  {:num-particles 100,
+   :radius 4,
    :gravity [0 -5.8],
    :drag 0.1,
    :mass 1,
@@ -27,6 +27,10 @@
 
 (def buffer (.-buffer particles))
 
-(defonce state
-  (r/atom (merge settings
-                 {:size-p size-p, :particles particles, :buffer buffer})))
+(defn reset-state!
+  []
+  (merge settings {:size-p size-p, :particles particles, :buffer buffer}))
+
+(defonce state (r/atom (reset-state!)))
+
+; (defonce state (reset-state!))

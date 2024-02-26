@@ -1,27 +1,25 @@
 (ns verlet-typed-cljs.slower
-  (:require [verlet-typed-cljs.state :refer [state]]
-            [verlet-typed-cljs.utils :refer [pset!]]))
+  (:require [verlet-typed-cljs.state :refer [state]]))
 
-(defn offset [i] (* i (:size-p @state)))
-(defn byte-offset
+(defn- offset [i] (* i (:size-p @state)))
+(defn- byte-offset
   [i]
   (* i (:size-p @state) (. js/Float32Array -BYTES_PER_ELEMENT)))
 
-(defn get-pos [particle] [(aget particle 0) (aget particle 1)])
-(defn get-prev-pos [particle] [(aget particle 2) (aget particle 3)])
-(defn get-acc [particle] [(aget particle 4) (aget particle 5)])
+(defn- get-pos [particle] [(aget particle 0) (aget particle 1)])
+(defn- get-prev-pos [particle] [(aget particle 2) (aget particle 3)])
+(defn- get-acc [particle] [(aget particle 4) (aget particle 5)])
 
-(defn set-pos! [particle x y] (aset particle 0 x) (aset particle 1 y))
-(defn set-prev-pos! [particle x y] (aset particle 2 x) (aset particle 3 y))
-(defn set-acc! [particle x y] (aset particle 4 x) (aset particle 5 y))
+(defn- set-pos! [particle x y] (aset particle 0 x) (aset particle 1 y))
+(defn- set-prev-pos! [particle x y] (aset particle 2 x) (aset particle 3 y))
+(defn- set-acc! [particle x y] (aset particle 4 x) (aset particle 5 y))
 
-(defn apply-force
+(defn- apply-force
   [particle [fx fy]]
   (let [[ax ay] (get-acc particle)] (set-acc! particle (+ ax fx) (+ ay fy)))
   particle)
 
-
-(defn accelerate-particle
+(defn- accelerate-particle
   [particle dt]
   (let [dt-sq (* dt dt)
         [px py] (get-prev-pos particle)
@@ -30,14 +28,14 @@
     (set-acc! particle 0 0))
   particle)
 
-(defn update-particle
+(defn- update-particle
   [particle]
   (let [[x y] (get-pos particle)
         [px py] (get-prev-pos particle)]
     (set-pos! particle (- (* 2 x) px) (- (* 2 y) py))
     (set-prev-pos! particle x y)))
 
-(defn draw-particles
+(defn- draw-particles
   [state]
   (let [buffer (:buffer @state)
         positions (js/Float32Array. buffer)
@@ -54,7 +52,7 @@
         (.arc ctx x y radius 0 (* 2 Math/PI) false)
         (.fill ctx)))))
 
-(defn update-all
+(defn- update-all
   [state dt]
   (let [buffer (:buffer @state)
         num-particles (:num-particles @state)
@@ -66,7 +64,7 @@
             (accelerate-particle dt)
             (update-particle))))))
 
-(defn bounce-all
+(defn- bounce-all
   [state]
   (let [buffer (:buffer @state)
         num-particles (:num-particles @state)
@@ -84,7 +82,7 @@
               (< y radius) (aset particle 1 (+ y (* 2 dy)))
               (> y (- height radius)) (aset particle 1 (+ y (* 2 dy))))))))
 
-(defn collide-all
+(defn- collide-all
   [state]
   (let [buffer (:buffer @state)
         num-particles (:num-particles @state)

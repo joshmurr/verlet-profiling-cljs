@@ -3,9 +3,9 @@
 
 ; SLOW first ver
 
-(defn offset [i] (* i (:size-p @state)))
+(defn- offset [i] (* i (:size-p @state)))
 
-(defn apply-force
+(defn- apply-force
   [state i [fx fy]]
   (let [pos (:particles @state)
         idx (offset i)
@@ -15,7 +15,7 @@
     (aset pos (+ idx 5) (+ ay fy)))
   state)
 
-(defn collide-with!
+(defn- collide-with!
   [state i]
   (let [pos (:particles @state)
         part-a (.slice pos (offset i) (+ (offset i) (:size-p @state)))
@@ -42,11 +42,11 @@
               (aset pos (inc (offset j)) (+ yb diy)))))
         (recur (inc j))))))
 
-(defn collide
+(defn- collide
   [state]
   (dotimes [i (:num-particles @state)] (collide-with! state i)))
 
-(defn bounce
+(defn- bounce
   [state]
   (let [pos (:particles @state)
         width (:width @state)
@@ -67,7 +67,7 @@
               (> y (- height radius))
                 (aset pos (inc (offset i)) (+ y (* 2 dy))))))))
 
-(defn accelerate-particles
+(defn- accelerate-particles
   [state i dt]
   (let [pos (:particles @state)
         idx (offset i)
@@ -82,7 +82,7 @@
     (aset pos (+ idx 5) 0))
   state)
 
-(defn update-particles
+(defn- update-particles
   [state i]
   (let [pos (:particles @state)
         idx (offset i)
@@ -92,7 +92,7 @@
         py (aget pos (+ idx 3))]
     (.set pos #js [(- (* x 2) px) (- (* y 2) py) x y] (offset i))))
 
-(defn draw-particles
+(defn- draw-particles
   [state]
   (let [pos (:particles @state)
         ctx (:ctx @state)
@@ -107,7 +107,7 @@
         (.arc ctx x y radius 0 (* 2 Math/PI) false)
         (.fill ctx)))))
 
-(defn update-all
+(defn- update-all
   [state dt]
   (let [gravity (:gravity @state)]
     (dotimes [i (:num-particles @state)]

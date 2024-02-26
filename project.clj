@@ -26,6 +26,7 @@
                           :asset-path "js/out",
                           :output-to "resources/public/js/app.js",
                           :output-dir "resources/public/js/out",
+                          :source-map true, ; Necessary for LSP
                           :optimizations :none}}
               {:id "release",
                :source-paths ["src"],

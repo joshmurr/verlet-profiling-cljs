@@ -15,39 +15,38 @@
 ; So! If I can get it running well *without* optimisations... then
 ; it'll be pretty rapid *with* optimisations, right?
 
-(defn offset [i] (* i (:size-p @state)))
+(defn- offset [i] (* i (:size-p @state)))
 
-(defn get-pos
+(defn- get-pos
   [particles idx]
   [(aget particles (+ idx 0)) (aget particles (+ idx 1))])
-(defn get-prev-pos
+(defn- get-prev-pos
   [particles idx]
   [(aget particles (+ idx 2)) (aget particles (+ idx 3))])
-(defn get-acc
+(defn- get-acc
   [particles idx]
   [(aget particles (+ idx 4)) (aget particles (+ idx 5))])
 
-(defn set-pos!
+(defn- set-pos!
   [particles idx x y]
   (aset particles (+ idx 0) x)
   (aset particles (+ idx 1) y))
-(defn set-prev-pos!
+(defn- set-prev-pos!
   [particles idx x y]
   (aset particles (+ idx 2) x)
   (aset particles (+ idx 3) y))
-(defn set-acc!
+(defn- set-acc!
   [particles idx x y]
   (aset particles (+ idx 4) x)
   (aset particles (+ idx 5) y))
 
-(defn apply-force
+(defn- apply-force
   [particles idx [fx fy]]
   (let [[ax ay] (get-acc particles idx)]
     (set-acc! particles idx (+ ax fx) (+ ay fy)))
   particles)
 
-
-(defn accelerate-particle
+(defn- accelerate-particle
   [particles idx dt]
   (let [dt-sq (* dt dt)
         [px py] (get-prev-pos particles idx)
@@ -56,14 +55,14 @@
     (set-acc! particles idx 0 0))
   particles)
 
-(defn update-particle
+(defn- update-particle
   [particles idx]
   (let [[x y] (get-pos particles idx)
         [px py] (get-prev-pos particles idx)]
     (set-pos! particles idx (- (* 2 x) px) (- (* 2 y) py))
     (set-prev-pos! particles idx x y)))
 
-(defn update-and-accelerate
+(defn- update-and-accelerate
   [particles idx dt]
   (let [dt-sq (* dt dt)
         [x y] (get-pos particles idx)
@@ -76,8 +75,7 @@
     (set-prev-pos! particles idx x y))
   (set-acc! particles idx 0 0))
 
-
-(defn draw-particles
+(defn- draw-particles
   [state]
   (let [ctx (:ctx @state)
         width (.-width (.-canvas ctx))
@@ -92,7 +90,7 @@
         (.arc ctx x y radius 0 (* 2 Math/PI) false)
         (.fill ctx)))))
 
-(defn update-all
+(defn- update-all
   [state dt]
   (let [particles (:particles @state)
         num-particles (:num-particles @state)
@@ -104,7 +102,7 @@
           (accelerate-particle (offset i) dt)
           (update-particle (offset i))))))
 
-(defn bounce-all
+(defn- bounce-all
   [state]
   (let [ctx (:ctx @state)
         width (.-width (.-canvas ctx))
@@ -124,7 +122,7 @@
               (> y (- height radius))
                 (aset particles (+ idx 1) (+ y (* 2 dy))))))))
 
-(defn collide-all
+(defn- collide-all
   [state]
   (let [particles (:particles @state)
         num-particles (:num-particles @state)

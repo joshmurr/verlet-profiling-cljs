@@ -7,6 +7,12 @@
   [arr idx els]
   (dotimes [i (count els)] (aset arr (+ i idx) (nth els i))))
 
+(defn conj-max
+  "Takes a vector, size limit and value x. Appends x to vector and
+  ensures vector does not grow beyond limit."
+  [vec limit x]
+  (let [n (count vec)]
+    (if (>= n limit) (conj (subvec vec (inc (- n limit))) x) (conj vec x))))
 
 (defn init-ctx
   [state]
@@ -40,7 +46,7 @@
 
 (defn with-timer
   [func t0 callbacks]
-  (let [res (func)
+  (let [_ (func)
         dt (- (.now js/performance) t0)]
     (when callbacks (doseq [cb callbacks] (cb dt)))
     func))
