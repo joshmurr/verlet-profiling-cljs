@@ -24,11 +24,6 @@
                  (.cancelAnimationFrame js/window @raf))]
     [animate cancel]))
 
-(defn moving-avg-comp
-  []
-  (let [fps (ratom/make-reaction #(get @state :moving-avg))]
-    (fn [] [:pre "fps: " (.floor js/Math (/ 1000 @fps))])))
-
 (defn mode-selector
   []
   (fn [] [:select
@@ -37,10 +32,20 @@
           (for [m ["none" "still-slow" "slow" "slower"]]
             [:option {:key m, :value m} m])]))
 
+(defn num-particles-selector
+  []
+  (fn [] [:select
+          {:default-value "100",
+           :on-change #(swap! state assoc
+                         :num-particles
+                         (js/parseInt (.-value (.-target %))))}
+          (for [m ["100" "300" "600" "1200"]] [:option {:key m, :value m} m])]))
+
 (defn canvas
   []
   (let [ref (atom nil)
         mode (ratom/make-reaction #(get @state :mode))
+        num-particles (ratom/make-reaction #(get @state :num-particles))
         prev-time (r/atom 0)]
     (fn []
       (react/useEffect (fn []
@@ -53,7 +58,7 @@
                                                                 modes))))]
                              (run)
                              cancel)))
-                       (array @mode))
+                       (array @mode @num-particles))
       [:<>
        [:pre
         (Math/floor (/ 1000
@@ -64,7 +69,7 @@
          :width 900,
          :height 900}]])))
 
-(defn app [] [:div [mode-selector] [:f> canvas]])
+(defn app [] [:div [mode-selector] [num-particles-selector] [:f> canvas]])
 
 (defn mount-root [app] (d/render [app] (.getElementById js/document "app")))
 
@@ -73,6 +78,10 @@
 (mount-root app)
 
 (comment
+  (defn moving-avg-comp
+    []
+    (let [fps (ratom/make-reaction #(get @state :moving-avg))]
+      (fn [] [:pre "fps: " (.floor js/Math (/ 1000 @fps))])))
   (defn cb
     [dt]
     (swap! state assoc

@@ -14,17 +14,6 @@
   (let [n (count vec)]
     (if (>= n limit) (conj (subvec vec (inc (- n limit))) x) (conj vec x))))
 
-(defn init-ctx
-  [state]
-  (let [canvas (js/document.createElement "canvas")
-        ctx (.getContext canvas "2d")
-        new-state (assoc state :ctx ctx)]
-    (.setAttribute canvas "width" (:width state))
-    (.setAttribute canvas "height" (:height state))
-    (.setAttribute canvas "style" "border: 1px dashed black;")
-    (.appendChild js/document.body canvas)
-    new-state))
-
 (defn add-particle
   [state x y idx]
   (let [particles (:particles @state)]
@@ -38,6 +27,8 @@
         width (.-width (.-canvas ctx))
         height (.-height (.-canvas ctx))
         size-p (:size-p @state)]
+    (swap! state assoc :particles (js/Float32Array. (* num-particles size-p)))
+    (swap! state assoc :buffer (.-buffer (:particles @state)))
     (dotimes [i num-particles]
       (add-particle state
                     (rand-range radius (- width radius))

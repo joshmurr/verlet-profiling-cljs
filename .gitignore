@@ -16,3 +16,4 @@ resources/public/js/
 resources/public/release/
 .rebel_readline_history
 .clj-kondo/
+.lsp/

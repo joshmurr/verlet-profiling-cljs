@@ -21,16 +21,4 @@
 ; slower 14
 ; still-slow 20
 
-(def size-p (* (:dimensions settings) 3)) ; (x y px py ax ay)
-
-(def particles (js/Float32Array. (* (:num-particles settings) size-p)))
-
-(def buffer (.-buffer particles))
-
-(defn reset-state!
-  []
-  (merge settings {:size-p size-p, :particles particles, :buffer buffer}))
-
-(defonce state (r/atom (reset-state!)))
-
-; (defonce state (reset-state!))
+(defonce state (r/atom (merge settings {:size-p (* (:dimensions settings) 3)})))
