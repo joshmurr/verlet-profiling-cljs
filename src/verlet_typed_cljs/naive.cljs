@@ -13,7 +13,7 @@
   (accelerate [p dt])
   (update-pos [p])
   (draw [p ctx])
-  (bounce [p w h])
+  (bounce [p b])
   (collide [p op]))
 
 (defrecord Particle [x y px py ax ay]
@@ -34,11 +34,16 @@
         (.beginPath ctx)
         (.arc ctx x y radius 0 (* 2 Math/PI) false)
         (.fill ctx))
-      p))
+      p)
+    (bounce [_ [w h]]
+      (let [radius (:radius @state)
+            dx (- px x)
+            dy (- py y)
+            x_ (if (or (< x radius) (> x (- w radius))) (+ x (* 2 dx)) x)
+            y_ (if (or (< y radius) (> y (- h radius))) (+ y (* 2 dy)) y)]
+        (->Particle x_ y_ px py ax ay))))
 
-(defn new-particle [x y] (->Particle x y x y 0 0))
-
-(def p (->Particle 10 2 9 1 0 2))
+(defn new-particle [x y] (->Particle x y (jiggle x) (jiggle y) 0 0))
 
 (defn init
   [state]
@@ -55,14 +60,13 @@
 
 (defn update-all
   [p]
-  (partial map
-           (-> p
-               (apply-force [0 -0.9])
-               (accelerate 0.1)
-               (update-pos)
-               (draw (:ctx @state)))))
+  (-> p
+      (apply-force [0 -0.9])
+      (accelerate 0.1)
+      (update-pos)
+      (draw (:ctx @state))))
 
 (defn run
   []
-  (swap! state update :particles update-all)
-  (print (:particles @state)))
+  (swap! state update :particles (partial map update-all))
+  (swap! state update :particles (partial map #(bounce % [900 900]))))
