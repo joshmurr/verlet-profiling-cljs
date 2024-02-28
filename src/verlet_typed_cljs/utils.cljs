@@ -19,21 +19,9 @@
   (let [particles (:particles @state)]
     (pset! particles idx [x y (jiggle x) (jiggle y)])))
 
-(defn init-particles!
-  [state]
-  (let [ctx (:ctx @state)
-        radius (:radius @state)
-        num-particles (:num-particles @state)
-        width (.-width (.-canvas ctx))
-        height (.-height (.-canvas ctx))
-        size-p (:size-p @state)]
-    (swap! state assoc :particles (js/Float32Array. (* num-particles size-p)))
-    (swap! state assoc :buffer (.-buffer (:particles @state)))
-    (dotimes [i num-particles]
-      (add-particle state
-                    (rand-range radius (- width radius))
-                    (rand-range radius (- height radius))
-                    (* i size-p)))))
+(defn init-base!
+  [state canvas-el]
+  (swap! state assoc :ctx (.getContext canvas-el "2d")))
 
 (defn with-timer
   [func t0 callbacks]

@@ -1,5 +1,6 @@
 (ns verlet-typed-cljs.still-slow
-  (:require [verlet-typed-cljs.state :refer [state]]))
+  (:require [verlet-typed-cljs.state :refer [state]]
+            [verlet-typed-cljs.utils :refer [rand-range add-particle]]))
 
 ; "SHOULD BE FASTER BUT IS STILL SLOW"
 
@@ -62,19 +63,6 @@
     (set-pos! particles idx (- (* 2 x) px) (- (* 2 y) py))
     (set-prev-pos! particles idx x y)))
 
-(defn- update-and-accelerate
-  [particles idx dt]
-  (let [dt-sq (* dt dt)
-        [x y] (get-pos particles idx)
-        [px py] (get-prev-pos particles idx)
-        [ax ay] (get-acc particles idx)]
-    (set-pos! particles
-              idx
-              (- (* 2 x) (+ px (* ax dt-sq)))
-              (- (* 2 y) (+ py (* ay dt-sq))))
-    (set-prev-pos! particles idx x y))
-  (set-acc! particles idx 0 0))
-
 (defn- draw-particles
   [state]
   (let [ctx (:ctx @state)
@@ -98,7 +86,6 @@
     (dotimes [i num-particles]
       (-> particles
           (apply-force (offset i) gravity)
-          #_(update-and-accelerate (offset i) dt)
           (accelerate-particle (offset i) dt)
           (update-particle (offset i))))))
 
@@ -147,9 +134,25 @@
                   (set-pos! particles idxb (+ xb dix) (+ yb diy)))))
             (recur (inc j))))))))
 
+(defn init
+  [state]
+  (print "init still-slow")
+  (let [ctx (:ctx @state)
+        radius (:radius @state)
+        num-particles (:num-particles @state)
+        width (.-width (.-canvas ctx))
+        height (.-height (.-canvas ctx))
+        size-p (:size-p @state)]
+    (swap! state assoc :particles (js/Float32Array. (* num-particles size-p)))
+    (dotimes [i num-particles]
+      (add-particle state
+                    (rand-range radius (- width radius))
+                    (rand-range radius (- height radius))
+                    (* i size-p)))))
+
 (defn run
   []
-  (do (update-all state (/ (:dt @state) 1000))
-      (collide-all state)
-      (bounce-all state)
-      (draw-particles state)))
+  (update-all state (:dt @state))
+  (collide-all state)
+  (bounce-all state)
+  (draw-particles state))

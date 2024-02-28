@@ -1,5 +1,6 @@
 (ns verlet-typed-cljs.slow
-  (:require [verlet-typed-cljs.state :refer [state]]))
+  (:require [verlet-typed-cljs.state :refer [state]]
+            [verlet-typed-cljs.utils :refer [rand-range add-particle]]))
 
 ; SLOW first ver
 
@@ -117,9 +118,25 @@
             (accelerate-particles i dt)
             (update-particles i))))))
 
+(defn init
+  [state]
+  (println "init slow")
+  (let [ctx (:ctx @state)
+        radius (:radius @state)
+        num-particles (:num-particles @state)
+        width (.-width (.-canvas ctx))
+        height (.-height (.-canvas ctx))
+        size-p (:size-p @state)]
+    (swap! state assoc :particles (js/Float32Array. (* num-particles size-p)))
+    (dotimes [i num-particles]
+      (add-particle state
+                    (rand-range radius (- width radius))
+                    (rand-range radius (- height radius))
+                    (* i size-p)))))
+
 (defn run
   []
-  (do (update-all state (/ (:dt @state) 1000))
-      (collide state)
-      (bounce state)
-      (draw-particles state)))
+  (update-all state (/ (:dt @state) 1000))
+  (collide state)
+  (bounce state)
+  (draw-particles state))

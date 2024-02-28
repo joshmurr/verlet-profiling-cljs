@@ -1,15 +1,20 @@
 (ns verlet-typed-cljs.core
   (:require [verlet-typed-cljs.state :refer [state]]
-            [verlet-typed-cljs.utils :refer [init-particles! mean conj-max]]
-            [verlet-typed-cljs.still-slow :refer [run] :rename {run still-slow}]
-            [verlet-typed-cljs.slower :refer [run] :rename {run slower}]
-            [verlet-typed-cljs.slow :refer [run] :rename {run slow}]
+            [verlet-typed-cljs.utils :refer [init-base!]]
+            [verlet-typed-cljs.still-slow :as still-slow]
+            [verlet-typed-cljs.slower :as slower]
+            [verlet-typed-cljs.slow :as slow]
+            [verlet-typed-cljs.naive :as naive]
             [reagent.core :as r]
             ["react" :as react]
             [reagent.ratom :as ratom]
             [reagent.dom :as d]))
 
-(def modes {:still-slow still-slow, :slow slow, :slower slower})
+(def modes
+  {:still-slow {:init still-slow/init, :run still-slow/run},
+   :slow {:init slow/init, :run slow/run},
+   :slower {:init slower/init, :run slower/run},
+   :naive {:init naive/init, :run naive/run}})
 
 (defn use-raf
   "Takes a function to pass to RAF and returns the animate function
@@ -24,67 +29,79 @@
                  (.cancelAnimationFrame js/window @raf))]
     [animate cancel]))
 
-(defn mode-selector
-  []
-  (fn [] [:select
-          {:default-value "none",
-           :on-change #(swap! state assoc :mode (.-value (.-target %)))}
-          (for [m ["none" "still-slow" "slow" "slower"]]
-            [:option {:key m, :value m} m])]))
+(defn selector
+  [{:keys [options default-value on-change]}]
+  [:select {:default-value default-value, :on-change on-change}
+   (for [m options] [:option {:key m, :value m} m])])
 
-(defn num-particles-selector
-  []
-  (fn [] [:select
-          {:default-value "100",
-           :on-change #(swap! state assoc
-                         :num-particles
-                         (js/parseInt (.-value (.-target %))))}
-          (for [m ["100" "300" "600" "1200"]] [:option {:key m, :value m} m])]))
+(defn debug-pre
+  [state]
+  (let [running? (ratom/make-reaction #(get @state :running?))]
+    (print "running?" @running?)
+    [:pre (.stringify js/JSON (clj->js @state) nil 2)]))
 
 (defn canvas
   []
   (let [ref (atom nil)
         mode (ratom/make-reaction #(get @state :mode))
         num-particles (ratom/make-reaction #(get @state :num-particles))
-        prev-time (r/atom 0)]
+        ; prev-time (r/atom 0)
+       ]
     (fn []
       (react/useEffect (fn []
                          (when (not (nil? @ref))
-                           (swap! state assoc :ctx (.getContext @ref "2d"))
-                           (init-particles! state)
-                           (let [[run cancel] (use-raf #(->> %
-                                                             (reset! prev-time)
-                                                             ((:still-slow
-                                                                modes))))]
-                             (run)
+                           (let [{:keys [init run]} (get modes (:mode @state))
+                                 [animate cancel] (use-raf run)]
+                             (init-base! state @ref)
+                             (init state)
+                             (swap! state assoc :running? true)
+                             (animate)
                              cancel)))
                        (array @mode @num-particles))
-      [:<>
-       [:pre
-        (Math/floor (/ 1000
-                       (- (.. js/document -timeline -currentTime) @prev-time)))]
+      [:div
        [:canvas
         {:id "particle-canvas",
          :ref #(reset! ref %),
          :width 900,
          :height 900}]])))
 
-(defn app [] [:div [mode-selector] [num-particles-selector] [:f> canvas]])
+(defn mode-selector
+  []
+  [selector
+   {:options ["still-slow" "slow" "slower" "naive"],
+    :default-value "still-slow",
+    :on-change #(swap! state assoc :mode (keyword (.-value (.-target %))))}])
+
+(defn num-particles-selector
+  []
+  [selector
+   {:options ["1" "100" "300" "600" "1200"],
+    :default-value "100",
+    :on-change #(swap! state assoc
+                  :num-particles
+                  (js/parseInt (.-value (.-target %))))}])
+
+(defn radius-selector
+  []
+  [:span [:label "Radius"]
+   [:input
+    {:type "range",
+     :min 1,
+     :max 300,
+     :default-value 50,
+     :on-change #(swap! state assoc
+                   :radius
+                   (/ (js/parseInt (.-value (.-target %))) 10))}]])
+
+(print [mode-selector])
+
+(defn app
+  []
+  [:div [mode-selector] [num-particles-selector] [radius-selector] [:f> canvas]
+   [:div [debug-pre state]]])
 
 (defn mount-root [app] (d/render [app] (.getElementById js/document "app")))
 
 ; (defn on-js-reload [] (mount-root app))
 
 (mount-root app)
-
-(comment
-  (defn moving-avg-comp
-    []
-    (let [fps (ratom/make-reaction #(get @state :moving-avg))]
-      (fn [] [:pre "fps: " (.floor js/Math (/ 1000 @fps))])))
-  (defn cb
-    [dt]
-    (swap! state assoc
-      :dt dt
-      :moving-avg
-        (mean (conj-max (:samples @state) (:moving-avg-window @state) dt)))))
