@@ -1,20 +1,14 @@
 (ns verlet-typed-cljs.naive
   (:require [verlet-typed-cljs.state :refer [state]]
-            [verlet-typed-cljs.utils :refer [rand-range jiggle]]))
+            [verlet-typed-cljs.utils :refer [jiggle rand-range]]))
 
 (defprotocol IParticle
-  (x [p])
-  (y [p])
-  (px [p])
-  (py [p])
-  (ax [p])
-  (ay [p])
   (apply-force [p f])
   (accelerate [p dt])
   (update-pos [p])
   (draw [p ctx])
   (bounce [p b])
-  (collide [p op]))
+  (collide-with [p op]))
 
 (defrecord Particle [x y px py ax ay]
   IParticle
@@ -41,7 +35,20 @@
             dy (- py y)
             x_ (if (or (< x radius) (> x (- w radius))) (+ x (* 2 dx)) x)
             y_ (if (or (< y radius) (> y (- h radius))) (+ y (* 2 dy)) y)]
-        (->Particle x_ y_ px py ax ay))))
+        (->Particle x_ y_ px py ax ay)))
+    (collide-with [p op]
+      (let [dx (- (:x op) x)
+            dy (- (:y op) y)
+            d2 (+ (* dx dx) (* dy dy))
+            r2 (* 4 (:radius @state) (:radius @state))
+            min-dist (* 2 (:radius @state))]
+        (if (< d2 r2)
+          (let [d (Math/sqrt d2)
+                factor (* (/ (- d min-dist) d) 0.5)
+                x_ (- x (* dx factor))
+                y_ (- y (* dy factor))]
+            (->Particle x_ y_ px py ax ay))
+          p))))
 
 (defn new-particle [x y] (->Particle x y (jiggle x) (jiggle y) 0 0))
 
@@ -66,7 +73,19 @@
       (update-pos)
       (draw (:ctx @state))))
 
+(defn collide-all
+  [particles]
+  (let [idx-arr (zipmap (range) particles)]
+    (map (fn [[i p1]]
+           (reduce (fn [prevp [j nextp]]
+                     (if (= i j) prevp (collide-with prevp nextp)))
+             p1
+             idx-arr))
+      idx-arr)))
+
 (defn run
   []
+  (.clearRect (:ctx @state) 0 0 900 900)
   (swap! state update :particles (partial map update-all))
-  (swap! state update :particles (partial map #(bounce % [900 900]))))
+  (swap! state update :particles (partial map #(bounce % [900 900])))
+  (swap! state update :particles collide-all))

@@ -37,7 +37,6 @@
 (defn debug-pre
   [state]
   (let [running? (ratom/make-reaction #(get @state :running?))]
-    (print "running?" @running?)
     [:pre (.stringify js/JSON (clj->js @state) nil 2)]))
 
 (defn canvas
