@@ -12,12 +12,6 @@
 
 (defrecord Particle [x y px py ax ay]
   IParticle
-    (x [_] x)
-    (y [_] y)
-    (px [_] px)
-    (py [_] py)
-    (ax [_] ax)
-    (ay [_] ay)
     (apply-force [_ [fx fy]] (->Particle x y px py (+ ax fx) (+ ay fy)))
     (accelerate [_ dt]
       (let [dt-sq (* dt dt)]
@@ -39,14 +33,15 @@
     (collide-with [p op]
       (let [dx (- (:x op) x)
             dy (- (:y op) y)
+            dir (Math/atan2 dy dx)
             d2 (+ (* dx dx) (* dy dy))
-            r2 (* 4 (:radius @state) (:radius @state))
             min-dist (* 2 (:radius @state))]
-        (if (< d2 r2)
+        (if (< d2 (* min-dist min-dist))
           (let [d (Math/sqrt d2)
-                factor (* (/ (- d min-dist) d) 0.5)
-                x_ (- x (* dx factor))
-                y_ (- y (* dy factor))]
+                factor (* (/ (- d min-dist) d) 2) ; Used a different
+                                                  ; algorithm here
+                x_ (+ x (* (Math/cos dir) factor))
+                y_ (+ y (* (Math/sin dir) factor))]
             (->Particle x_ y_ px py ax ay))
           p))))
 

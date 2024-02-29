@@ -74,8 +74,8 @@
 (defn num-particles-selector
   []
   [selector
-   {:options ["1" "100" "300" "600" "1200"],
-    :default-value "100",
+   {:options ["3" "100" "300" "600" "1200"],
+    :default-value "3",
     :on-change #(swap! state assoc
                   :num-particles
                   (js/parseInt (.-value (.-target %))))}])

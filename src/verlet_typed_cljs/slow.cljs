@@ -136,7 +136,7 @@
 
 (defn run
   []
-  (update-all state (/ (:dt @state) 1000))
+  (update-all state (:dt @state))
   (collide state)
   (bounce state)
   (draw-particles state))

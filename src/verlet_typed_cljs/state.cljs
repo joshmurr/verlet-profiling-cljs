@@ -3,7 +3,7 @@
 
 (defonce settings
   {:running? false,
-   :num-particles 100,
+   :num-particles 3,
    :radius 8,
    :gravity [0 -0.8],
    :drag 0.1,
