@@ -62,11 +62,11 @@
             py (aget part 3)
             dx (- px x)
             dy (- py y)]
-        (cond (< x radius) (aset pos (offset i) (+ x (* 2 dx)))
-              (> x (- width radius)) (aset pos (offset i) (+ x (* 2 dx)))
-              (< y radius) (aset pos (inc (offset i)) (+ y (* 2 dy)))
+        (cond (< x radius) (aset pos (offset i) (+ x (* 1.8 dx)))
+              (> x (- width radius)) (aset pos (offset i) (+ x (* 1.8 dx)))
+              (< y radius) (aset pos (inc (offset i)) (+ y (* 1.8 dy)))
               (> y (- height radius))
-                (aset pos (inc (offset i)) (+ y (* 2 dy))))))))
+                (aset pos (inc (offset i)) (+ y (* 1.8 dy))))))))
 
 (defn- accelerate-particles
   [state i dt]
@@ -91,7 +91,7 @@
         y (aget pos (+ idx 1))
         px (aget pos (+ idx 2))
         py (aget pos (+ idx 3))]
-    (.set pos #js [(- (* x 2) px) (- (* y 2) py) x y] (offset i))))
+    (.set pos #js [(- (* x 2) px) (- (* y 2) py) x y] idx)))
 
 (defn- draw-particles
   [state]
@@ -112,11 +112,10 @@
   [state dt]
   (let [gravity (:gravity @state)]
     (dotimes [i (:num-particles @state)]
-      (let [idx (offset i)]
-        (-> state
-            (apply-force i gravity)
-            (accelerate-particles i dt)
-            (update-particles i))))))
+      (-> state
+          (apply-force i gravity)
+          (accelerate-particles i dt)
+          (update-particles i)))))
 
 (defn init
   [state]
@@ -135,8 +134,8 @@
                     (* i size-p)))))
 
 (defn run
-  []
-  (update-all state (:dt @state))
+  [dt]
+  (update-all state dt)
   (collide state)
   (bounce state)
   (draw-particles state))

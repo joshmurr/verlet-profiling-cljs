@@ -5,7 +5,6 @@
             [verlet-typed-cljs.slower :as slower]
             [verlet-typed-cljs.slow :as slow]
             [verlet-typed-cljs.naive :as naive]
-            [reagent.core :as r]
             ["react" :as react]
             [reagent.ratom :as ratom]
             [reagent.dom :as d]))
@@ -21,9 +20,11 @@
   and a function to cancel the RAF ID."
   [step-fn & args]
   (let [raf (atom nil)
-        animate (fn animate* [t]
-                  (step-fn t args)
-                  (reset! raf (.requestAnimationFrame js/window animate*)))
+        pt (atom 0)
+        animate
+          (fn animate* [t]
+            (when-not (nil? t) (step-fn (/ (- t @pt) 100) args) (reset! pt t))
+            (reset! raf (.requestAnimationFrame js/window animate*)))
         cancel (fn []
                  (print "Cacelling" @raf)
                  (.cancelAnimationFrame js/window @raf))]
@@ -37,7 +38,7 @@
 (defn debug-pre
   [state]
   (let [running? (ratom/make-reaction #(get @state :running?))]
-    [:pre (.stringify js/JSON (clj->js @state) nil 2)]))
+    (if running? [:pre (.stringify js/JSON (clj->js @state) nil 2)] nil)))
 
 (defn canvas
   []
@@ -48,7 +49,7 @@
        ]
     (fn []
       (react/useEffect (fn []
-                         (when (not (nil? @ref))
+                         (when-not (nil? @ref)
                            (let [{:keys [init run]} (get modes (:mode @state))
                                  [animate cancel] (use-raf run)]
                              (init-base! state @ref)
