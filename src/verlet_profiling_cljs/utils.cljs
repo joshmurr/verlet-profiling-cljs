@@ -1,4 +1,4 @@
-(ns verlet-typed-cljs.utils)
+(ns verlet-profiling-cljs.utils)
 
 (defn rand-range [min max] (+ min (* (rand) (- max min))))
 (defn jiggle [x] (+ x (* 2 (- (rand) 0.5))))

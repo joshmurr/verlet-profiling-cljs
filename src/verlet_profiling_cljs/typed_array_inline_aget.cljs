@@ -1,6 +1,6 @@
-(ns verlet-typed-cljs.slow
-  (:require [verlet-typed-cljs.state :refer [state]]
-            [verlet-typed-cljs.utils :refer [rand-range add-particle]]))
+(ns verlet-profiling-cljs.typed-array-inline-aget
+  (:require [verlet-profiling-cljs.state :refer [state]]
+            [verlet-profiling-cljs.utils :refer [rand-range add-particle]]))
 
 ; SLOW first ver
 
@@ -119,7 +119,7 @@
 
 (defn init
   [state]
-  (println "init slow")
+  (println "init typed-array-inline-aget")
   (let [ctx (:ctx @state)
         radius (:radius @state)
         num-particles (:num-particles @state)

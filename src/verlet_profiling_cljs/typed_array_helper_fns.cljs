@@ -1,8 +1,9 @@
-(ns verlet-typed-cljs.still-slow
-  (:require [verlet-typed-cljs.state :refer [state]]
-            [verlet-typed-cljs.utils :refer [rand-range add-particle]]))
+(ns verlet-profiling-cljs.typed-array-helper-fns
+  (:require [verlet-profiling-cljs.state :refer [state]]
+            [verlet-profiling-cljs.utils :refer [rand-range add-particle]]))
 
 ; "SHOULD BE FASTER BUT IS STILL SLOW"
+; BUT IS THE CURRENT WINNER
 
 ; Turns out this isn't toooo bad, but Fighweel adds a lot of overhead
 ; which slows everything down. The :advanced compiled version speeds
@@ -136,7 +137,7 @@
 
 (defn init
   [state]
-  (print "init still-slow")
+  (print "init typed-array-helper-fns")
   (let [ctx (:ctx @state)
         radius (:radius @state)
         num-particles (:num-particles @state)
@@ -151,8 +152,8 @@
                     (* i size-p)))))
 
 (defn run
-  []
-  (update-all state (:dt @state))
+  [dt]
+  (update-all state dt)
   (collide-all state)
   (bounce-all state)
   (draw-particles state))

@@ -1,32 +1,39 @@
-(ns verlet-typed-cljs.core
-  (:require [verlet-typed-cljs.state :refer [state]]
-            [verlet-typed-cljs.utils :refer [init-base!]]
-            [verlet-typed-cljs.still-slow :as still-slow]
-            [verlet-typed-cljs.slower :as slower]
-            [verlet-typed-cljs.slow :as slow]
-            [verlet-typed-cljs.naive :as naive]
-            ["react" :as react]
-            [reagent.ratom :as ratom]
-            [reagent.dom :as d]))
+(ns verlet-profiling-cljs.core
+  (:require
+    [verlet-profiling-cljs.state :refer [state]]
+    [verlet-profiling-cljs.utils :refer [init-base!]]
+    [verlet-profiling-cljs.typed-array-helper-fns :as typed-array-helper-fns]
+    [verlet-profiling-cljs.array-buffer :as array-buffer]
+    [verlet-profiling-cljs.spatial-hashing :as spatial-hashing]
+    [verlet-profiling-cljs.typed-array-inline-aget :as typed-array-inline-aget]
+    [verlet-profiling-cljs.naive :as naive]
+    ["react" :as react]
+    [reagent.ratom :as ratom]
+    [reagent.dom :as d]))
 
 (def modes
-  {:still-slow {:init still-slow/init, :run still-slow/run},
-   :slow {:init slow/init, :run slow/run},
-   :slower {:init slower/init, :run slower/run},
-   :naive {:init naive/init, :run naive/run}})
+  {:typed-array-helper-fns {:init typed-array-helper-fns/init,
+                            :run typed-array-helper-fns/run},
+   :typed-array-inline-aget {:init typed-array-inline-aget/init,
+                             :run typed-array-inline-aget/run},
+   :array-buffer {:init array-buffer/init, :run array-buffer/run},
+   :naive {:init naive/init, :run naive/run},
+   :spatial-hashing {:init spatial-hashing/init, :run spatial-hashing/run}})
 
 (defn use-raf
   "Takes a function to pass to RAF and returns the animate function
   and a function to cancel the RAF ID."
   [step-fn & args]
   (let [raf (atom nil)
-        pt (atom 0)
-        animate
-          (fn animate* [t]
-            (when-not (nil? t) (step-fn (/ (- t @pt) 100) args) (reset! pt t))
-            (reset! raf (.requestAnimationFrame js/window animate*)))
+        pt (atom (.. js/document -timeline -currentTime))
+        animate (fn animate* [t]
+                  (when (and (some? @pt) (some? t))
+                    (step-fn (/ (- t @pt) 1000) args))
+                  (reset! pt t)
+                  (reset! raf (.requestAnimationFrame js/window animate*)))
         cancel (fn []
                  (print "Cacelling" @raf)
+                 (reset! pt 0)
                  (.cancelAnimationFrame js/window @raf))]
     [animate cancel]))
 
@@ -44,9 +51,7 @@
   []
   (let [ref (atom nil)
         mode (ratom/make-reaction #(get @state :mode))
-        num-particles (ratom/make-reaction #(get @state :num-particles))
-        ; prev-time (r/atom 0)
-       ]
+        num-particles (ratom/make-reaction #(get @state :num-particles))]
     (fn []
       (react/useEffect (fn []
                          (when-not (nil? @ref)
@@ -62,14 +67,15 @@
        [:canvas
         {:id "particle-canvas",
          :ref #(reset! ref %),
-         :width 900,
-         :height 900}]])))
+         :width (:width @state),
+         :height (:height @state)}]])))
 
 (defn mode-selector
   []
   [selector
-   {:options ["still-slow" "slow" "slower" "naive"],
-    :default-value "still-slow",
+   {:options ["typed-array-helper-fns" "typed-array-inline-aget" "array-buffer"
+              "naive" "spatial-hashing"],
+    :default-value "typed-array-helper-fns",
     :on-change #(swap! state assoc :mode (keyword (.-value (.-target %))))}])
 
 (defn num-particles-selector
@@ -87,18 +93,16 @@
    [:input
     {:type "range",
      :min 1,
-     :max 300,
-     :default-value 50,
+     :max 600,
+     :default-value 100,
      :on-change #(swap! state assoc
                    :radius
                    (/ (js/parseInt (.-value (.-target %))) 10))}]])
 
-(print [mode-selector])
-
 (defn app
   []
   [:div [mode-selector] [num-particles-selector] [radius-selector] [:f> canvas]
-   [:div [debug-pre state]]])
+   #_[:div [debug-pre state]]])
 
 (defn mount-root [app] (d/render [app] (.getElementById js/document "app")))
 

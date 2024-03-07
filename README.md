@@ -1,3 +1,3 @@
-# verlet-typed-cljs
+# verlet-profiling-cljs
 
 Finding out how to run simple positional Verlet as fast as possible via Clojurescript.

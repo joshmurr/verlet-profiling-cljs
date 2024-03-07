@@ -1,6 +1,6 @@
-(ns verlet-typed-cljs.slower
-  (:require [verlet-typed-cljs.state :refer [state]]
-            [verlet-typed-cljs.utils :refer [rand-range add-particle]]))
+(ns verlet-profiling-cljs.array-buffer
+  (:require [verlet-profiling-cljs.state :refer [state]]
+            [verlet-profiling-cljs.utils :refer [rand-range add-particle]]))
 
 (defn- offset [i] (* i (:size-p @state)))
 (defn- byte-offset
@@ -112,7 +112,7 @@
 
 (defn init
   [state]
-  (println "init slower")
+  (println "init array-buffer")
   (let [ctx (:ctx @state)
         radius (:radius @state)
         num-particles (:num-particles @state)
@@ -130,8 +130,8 @@
                     (* i size-p)))))
 
 (defn run
-  []
-  (update-all state (:dt @state))
+  [dt]
+  (update-all state dt)
   (collide-all state)
   (bounce-all state)
   (draw-particles state))

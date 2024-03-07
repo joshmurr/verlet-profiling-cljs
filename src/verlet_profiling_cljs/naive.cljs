@@ -1,6 +1,6 @@
-(ns verlet-typed-cljs.naive
-  (:require [verlet-typed-cljs.state :refer [state]]
-            [verlet-typed-cljs.utils :refer [jiggle rand-range]]))
+(ns verlet-profiling-cljs.naive
+  (:require [verlet-profiling-cljs.state :refer [state]]
+            [verlet-profiling-cljs.utils :refer [jiggle rand-range]]))
 
 (defprotocol IParticle
   (apply-force [p f])
@@ -61,10 +61,10 @@
     (swap! state assoc :particles particles)))
 
 (defn update-all
-  [p]
+  [p dt]
   (-> p
       (apply-force [0 -0.9])
-      (accelerate 0.1)
+      (accelerate dt)
       (update-pos)
       (draw (:ctx @state))))
 
@@ -79,8 +79,10 @@
       idx-arr)))
 
 (defn run
-  []
+  [dt]
   (.clearRect (:ctx @state) 0 0 900 900)
-  (swap! state update :particles (partial map update-all))
-  (swap! state update :particles (partial map #(bounce % [900 900])))
-  (swap! state update :particles collide-all))
+  (let [new-particles (->> (:particles @state)
+                           (map (fn [p] (update-all p dt)))
+                           (collide-all)
+                           (map (fn [p] (bounce p [900 900]))))]
+    (swap! state assoc :particles new-particles)))
